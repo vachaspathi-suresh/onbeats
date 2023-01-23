@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700,800,900&disolay=swap');
+*{
+    margin:0;
+    padding:0;
+    box-sizing: border-box;
+    font-family: 'Poppins',sans-serif;
+}
+body{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: #223243;
+}
+.conatiner{
+    padding:40px;
+    border: 0.5rem solid #223243;
+    border-radius: 20px;
+    box-shadow: -5px -5px 15px rgba(255, 255, 255,0.1),
+    5px 5px 15px rgba(0, 0, 0, 0.35),
+   inset -5px -5px 15px rgba(255, 255, 255,0.1),
+    inset 5px 5px 15px rgba(0, 0, 0, 0.35);
+}
+.conatiner .form{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 1.5 rem;
+}
+.conatiner .form.signin,
+.conatiner.signinform .form{
+    display: none;
+}
+.conatiner.signinform .form.signin{
+    display: flex;
+}
+.conatiner .form h2{
+    color:#fff;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+}
+.conatiner .form .inputBox{
+    position: relative;
+    width:300px;
+}
+.conatiner .form .inputBox input{
+    padding:12px 10px 12px 55px;
+    margin-bottom: 0.5em;
+    border:none;
+    width: 100%;
+    background-color: #223243;
+    border:1px solid rgba(0, 0, 0, 0.1);
+    color:#fff;
+    font-weight: 300;
+    border-radius: 25px;
+    font-size: 1em;
+    box-shadow:  -5px -5px 15px rgba(255, 255, 255,0.1),
+    5px 5px 15px rgba(0, 0, 0, 0.35);
+    transition: 0.5s;
+    outline: none; 
+}
+.conatiner .form .inputBox span{
+    position:absolute;
+    top:0;
+    padding:12px 10px 12px 55px;  
+    pointer-events: none;
+    font-size: 1em;
+    font-weight: 300;
+    transition: 0.5s;
+    letter-spacing: 0.05em;
+    color:rgba(255, 255, 255, 0.5);
+}
+.conatiner .form .inputBox input:valid ~span,
+.conatiner .form .inputBox input:focus ~span{
+    color:#00dfc4;
+    border: 1px solid #00dfc4;
+    background-color: #223243;
+    transform: translateX(25px) translateY(-10px);
+    font-size: 0.6em;
+    padding:0 8px; 
+    border-radius: 10px;
+    letter-spacing: 0.1em;
+}
+.conatiner .form .inputBox input:valid,
+.conatiner .form .inputBox input:focus{
+    border: 1px solid #00dfc4;
+}
+.conatiner .form .inputBox i{
+    position:absolute;
+    top:15px;
+    left:25px;
+    width:25px;
+    padding:2px 0;
+    color:#00dfc4;
+    padding-right:8px;
+    border-right:1px solid #00dfc4;
+}
+.conatiner .form .inputBox input[type="submit"]{
+    background-color: #00dfc4;
+    color:#223243;
+    padding:10 0;
+    font-weight:500;
+    cursor: pointer;
+    box-shadow: -5px -5px 15px rgba(255, 255, 255,0.1),
+    5px 5px 15px rgba(0, 0, 0, 0.35),
+   inset -5px -5px 15px rgba(255, 255, 255,0.1),
+    inset 5px 5px 15px rgba(0, 0, 0, 0.35);;
+}
+
+.conatiner .form p{
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75em;
+    font-weight: 300;
+}
+.conatiner .form p a{
+    font-weight: 300;
+    color:#fff; 
+}
