@@ -6,6 +6,7 @@ const shuffle = require("../utils/RandomGenerator");
 
 const { validationResult } = require("express-validator");
 const mongoose = require("mongoose");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
@@ -68,6 +69,11 @@ const signUp = async (req, res, next) => {
     email: req.body.email,
     password: hashedPassword,
     avatarImage: defAvatar.data,
+    playlists: [],
+    userprivilege: "cmn",
+    expiredate: new Date(),
+    stripeCustomer: "empty",
+    stripeSuscription: "empty",
   });
 
   try {
@@ -80,12 +86,11 @@ const signUp = async (req, res, next) => {
 
   let token;
   try {
-    token = "qwerty";
-    // token = jwt.sign(
-    //   { userId: newUser.id, email: newUser.email },
-    //   process.env.TOKEN_SECRET,
-    //   { expiresIn: "1h" }
-    // );
+    token = jwt.sign(
+      { userId: newUser.id, email: newUser.email },
+      process.env.TOKEN_SECRET,
+      { expiresIn: "1h" }
+    );
   } catch (err) {
     return next(
       new HttpError("Signing up failed, please try again later.", 500)
@@ -96,6 +101,7 @@ const signUp = async (req, res, next) => {
     userId: newUser.id,
     name: newUser.name,
     username: newUser.username,
+    userstatus: newUser.userprivilege,
     token: token,
   });
 };
@@ -136,12 +142,17 @@ const login = async (req, res, next) => {
 
   let token;
   try {
-    token = "qwerty";
-    // token = jwt.sign(
-    //   { userId: existingUser.id, email: existingUser.email },
-    //   process.env.TOKEN_SECRET,
-    //   { expiresIn: "1h" }
-    // );
+    token = jwt.sign(
+      { userId: existingUser.id, email: existingUser.email },
+      process.env.TOKEN_SECRET,
+      { expiresIn: "1h" }
+    );
+    if (existingUser.userprivilege === "prm") {
+      if (existingUser.expiredate < new Date()) {
+        existingUser.userprivilege === "cmn";
+        existingUser.save();
+      }
+    }
   } catch (err) {
     return next(
       new HttpError("Logging in failed, please try again later.", 500)
@@ -153,6 +164,7 @@ const login = async (req, res, next) => {
     avatar: existingUser.avatarImage,
     name: existingUser.name,
     userId: existingUser.id,
+    userstatus: existingUser.userprivilege,
     token: token,
   });
 };
@@ -279,10 +291,9 @@ const forgetPassword = async (req, res, next) => {
   try {
     const secret =
       process.env.TOKEN_SECRET + existingUser.password.slice(0, 10);
-    // token = jwt.sign({ uid: existingUser.id }, secret, {
-    //   expiresIn: "15m",
-    // });
-    token = "qwerty";
+    token = jwt.sign({ uid: existingUser.id }, secret, {
+      expiresIn: "15m",
+    });
   } catch (err) {
     return next(
       new HttpError("Unable to Generate link, please try again later.", 500)
@@ -290,16 +301,15 @@ const forgetPassword = async (req, res, next) => {
   }
   const url = `${process.env.CLIENT_ORIGIN}/auth/reset-password?rsid=${existingUser.id}&ratuid=${token}`;
   const mailOptions = {
-    from: "onbeats.help@zohomail.in",
+    from: "onbeats.help@gmail.in",
     to: existingUser.email,
     subject: "Reset your password",
-    html: `<h1>Goblet of Games</h1><p>Hi ${existingUser.username},</p><p>We got a request to reset your GoG password</p><a href="${url}"><button style="background-color:blue;color:white;padding:10px;border:0;margin:1% 3%;width:94%;cursor:pointer;">Reset Password</button></a><br/><p>if you ignore this message, your password will not be changed.</p><p><strong>Note::</strong>The above link is only valid for 15 minutes</p>`,
+    html: `<h1>Onbeats</h1><p>Hi ${existingUser.username},</p><p>We got a request to reset your Onbeats password</p><a href="${url}"><button style="background-color:blue;color:white;padding:10px;border:0;margin:1% 3%;width:94%;cursor:pointer;">Reset Password</button></a><br/><p>if you ignore this message, your password will not be changed.</p><p><strong>Note::</strong>The above link is only valid for 15 minutes</p>`,
   };
 
   try {
     await transporter.sendMail(mailOptions, function (err, info) {
       if (err) {
-        console.log(err);
         return next(
           new HttpError("Unable to Generate link, please try again later.")
         );
@@ -330,8 +340,7 @@ const verifyResetToken = async (req, res, next) => {
   }
   try {
     const secret = process.env.TOKEN_SECRET + user.password.slice(0, 10);
-    decodeToken = { uid: req.body.uid };
-    // const decodeToken = jwt.verify(req.body.token, secret);
+    const decodeToken = jwt.verify(req.body.token, secret);
     res.status(200).json({ uid: decodeToken.uid });
   } catch (err) {
     return next(
@@ -359,7 +368,7 @@ const resetPassword = async (req, res, next) => {
 
   try {
     const secret = process.env.TOKEN_SECRET + user.password.slice(0, 10);
-    // jwt.verify(req.body.token, secret);
+    jwt.verify(req.body.token, secret);
   } catch (err) {
     return next(
       new HttpError("Unable to verify link, please try again later.", 500)
@@ -403,7 +412,6 @@ const setAvatar = async (req, res, next) => {
       },
       { new: true }
     );
-    console.log(req.userData.userID);
   } catch (err) {
     return next(
       new HttpError("Unable to set avatar, please try again later.", 500)
@@ -412,8 +420,134 @@ const setAvatar = async (req, res, next) => {
   if (!user) {
     return next(new HttpError("User not found", 404));
   }
-
   res.status(200).json({ avatar: user.avatarImage });
+};
+
+const createPaymentSession = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return next(new HttpError("Invalid Request", 422));
+  }
+  let prices;
+  let session;
+  try {
+    prices = await stripe.prices.list({
+      lookup_keys: [req.body.lookup_key],
+      expand: ["data.product"],
+    });
+
+    session = await stripe.checkout.sessions.create({
+      billing_address_collection: "auto",
+      line_items: [
+        {
+          price: prices.data[0].id,
+          quantity: 1,
+        },
+      ],
+      mode: "subscription",
+      success_url: `${process.env.CLIENT_ORIGIN}/payment?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.CLIENT_ORIGIN}/payment?canceled=true`,
+    });
+  } catch (err) {
+    return next(
+      new HttpError(
+        "Unable to Create payment session, please try again later.",
+        500
+      )
+    );
+  }
+  if (!session) {
+    return next(
+      new HttpError(
+        "Unable to Create payment session, please try again later.",
+        500
+      )
+    );
+  }
+  res.status(200).json({ url: session.url });
+};
+
+const manageSubscription = async (req, res, next) => {
+  let user;
+  try {
+    user = await User.findById(req.userData.userID);
+  } catch (err) {
+    return next(
+      new HttpError(
+        "Unable to manage subscription, please try again later.",
+        500
+      )
+    );
+  }
+  if (!user) {
+    return next(new HttpError("User not found", 404));
+  }
+  let portalSession;
+  try {
+    portalSession = await stripe.billingPortal.sessions.create({
+      customer: user.stripeCustomer,
+      return_url: process.env.CLIENT_ORIGIN,
+    });
+  } catch (err) {
+    return next(
+      new HttpError(
+        "Unable to manage subscription, please try again later.",
+        500
+      )
+    );
+  }
+  if (!portalSession) {
+    return next(
+      new HttpError(
+        "Unable to manage subscription, please try again later.",
+        500
+      )
+    );
+  }
+  res.status(200).json({ url: portalSession.url });
+};
+
+const addSubscription = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return next(new HttpError("Invalid Request", 422));
+  }
+
+  let user;
+  try {
+    user = await User.findById(req.userData.userID);
+  } catch (err) {
+    return next(
+      new HttpError(
+        "Unable to create subscription, please try again later.",
+        500
+      )
+    );
+  }
+  if (!user) {
+    return next(new HttpError("User not found", 404));
+  }
+  try {
+    const checkoutSession = await stripe.checkout.sessions.retrieve(
+      req.body.session_id
+    );
+    const subscription = await stripe.subscriptions.retrieve(
+      checkoutSession.subscription
+    );
+    user.stripeCustomer = checkoutSession.customer;
+    user.stripeSuscription = checkoutSession.subscription;
+    user.expiredate = new Date(subscription.current_period_end * 1000);
+    if (user.expiredate >= new Date()) user.userprivilege = "prm";
+    user.save();
+    res.status(200).json({ expiresAt: user.expiredate, status: "success" });
+  } catch (err) {
+    return next(
+      new HttpError(
+        "Unable to create subscription, please try again later.",
+        500
+      )
+    );
+  }
 };
 
 exports.addAvatar = addAvatar;
@@ -427,3 +561,6 @@ exports.forgetPassword = forgetPassword;
 exports.verifyResetToken = verifyResetToken;
 exports.resetPassword = resetPassword;
 exports.setAvatar = setAvatar;
+exports.createPaymentSession = createPaymentSession;
+exports.manageSubscription = manageSubscription;
+exports.addSubscription = addSubscription;

@@ -46,14 +46,9 @@ const Avatar = () => {
     clearError: getClearError,
     sendRequest: getSendRequest,
   } = useHTTP();
-  const isLogged = useSelector((state) => state.auth.isLoggedIn);
   const uname = useSelector((state) => state.user.username);
   const name = useSelector((state) => state.user.name);
-  useEffect(() => {
-    if (!isLogged) {
-      navigate("/auth");
-    }
-  }, [isLogged, navigate]);
+  const userstatus = useSelector((state) => state.user.userstatus);
   const token = useSelector((state) => state.auth.token);
 
   const setProfilePicture = async () => {
@@ -74,14 +69,18 @@ const Avatar = () => {
         );
         dispatch(userActions.setAvatar(responseData.avatar));
         localStorage.setItem(
-          "gog-user-data",
+          "onbeats-user-data",
           JSON.stringify({
             name: name,
             uname: uname,
             avatar: responseData.avatar,
+            userstatus: userstatus,
           })
         );
-        navigate("/");
+        if(userstatus==="cmn")
+          navigate("/pricing");
+        else
+          navigate("/");
       } catch (err) {
         toast.error(err.message, {
           ...toastOptions,

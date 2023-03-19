@@ -4,6 +4,7 @@ const initialState = {
   username: null,
   avatar: null,
   name: null,
+  userstatus:"cmn",
 };
 
 const userSlice = createSlice({
@@ -18,6 +19,9 @@ const userSlice = createSlice({
     },
     setName(state, action) {
       state.name = action.payload;
+    },
+    setStatus(state, action) {
+      state.userstatus = action.payload;
     },
   },
 });

@@ -53,4 +53,20 @@ router.post(
   userControllers.setAvatar
 );
 
+router.post(
+  "/create-session",
+  [check("lookup_key").not().isEmpty()],
+  userControllers.createPaymentSession
+);
+
+router.post(
+  "/manage-subscription",
+  userControllers.manageSubscription
+);
+
+router.post(
+  "/add-subscription",
+  [check("session_id").not().isEmpty()],
+  userControllers.addSubscription
+);
 module.exports = router;

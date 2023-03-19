@@ -1,5 +1,13 @@
 const mongoose = require("mongoose");
 
+const playlistSchema = new mongoose.Schema({
+  playlistname:{
+    type:String,
+    required:true,
+  },
+  playlistsongs:[{type: mongoose.Types.ObjectId,ref:"Song"}],
+})
+
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
@@ -28,6 +36,23 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  playlists: [{type:playlistSchema}],
+  userprivilege:{
+    type:String,
+    required:true,
+  },
+  expiredate:{
+    type: Date,
+    required: true,
+  },
+  stripeCustomer:{
+    type:String,
+    required:true,
+  },
+  stripeSuscription:{
+    type:String,
+    required:true,
+  }
 });
 
 module.exports = mongoose.model("User", userSchema);

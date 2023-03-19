@@ -122,7 +122,9 @@ const Login = () => {
         );
         userNamesList.current = responseData.usernames;
       } catch (err) {
+        if(!err.message.includes("aborted")){
         toast.error(err.message, toastOptions);
+        }
       }
     };
     getUsernames();
@@ -170,12 +172,14 @@ const Login = () => {
         dispatch(userActions.setAvatar(dataResponse.avatar));
         dispatch(userActions.setUsername(dataResponse.username));
         dispatch(userActions.setName(dataResponse.name));
+        dispatch(userActions.setStatus(dataResponse.userstatus));
         localStorage.setItem(
-          "gog-user-data",
+          "onbeats-user-data",
           JSON.stringify({
             name: dataResponse.name,
             uname: dataResponse.username,
             avatar: dataResponse.avatar,
+            userstatus: dataResponse.userstatus,
           })
         );
       } catch (err) {
@@ -202,12 +206,15 @@ const Login = () => {
         login(dataResponse.userId, dataResponse.token);
         dispatch(userActions.setUsername(dataResponse.username));
         dispatch(userActions.setName(dataResponse.name));
+        dispatch(userActions.setAvatar(dataResponse.avatar));
+        dispatch(userActions.setStatus(dataResponse.userstatus));
         localStorage.setItem(
-          "gog-user-data",
+          "onbeats-user-data",
           JSON.stringify({
             name: dataResponse.name,
             uname: dataResponse.username,
-            avatar: null,
+            avatar: dataResponse.avatar,
+            userstatus: dataResponse.userstatus,
           })
         );
         navigate("/avatar");
