@@ -1,5 +1,5 @@
-export const baseRoute = "http://localhost:5000";//"https://onbeats.cyclic.app";
-export const ownRoute = "http://localhost:3000";//"https://onbeats-app.web.app";
+export const baseRoute = "https://onbeats.cyclic.app";
+export const ownRoute = "https://onbeats-app.web.app";
 export const cloudRoute = "https://d1k8dnytb5pquj.cloudfront.net";
 
 /*******************  user-routes *********************/
