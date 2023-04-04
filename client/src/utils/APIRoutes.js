@@ -1,5 +1,6 @@
-export const baseRoute = "https://onbeats.cyclic.app";
-export const ownRoute = "https://onbeats-app.web.app";
+export const baseRoute = "http://localhost:5000";//"https://onbeats.cyclic.app";
+export const ownRoute = "http://localhost:3000";//"https://onbeats-app.web.app";
+export const cloudRoute = "https://d1k8dnytb5pquj.cloudfront.net";
 
 /*******************  user-routes *********************/
 
@@ -21,8 +22,8 @@ export const addSubscriptionRoute = `${baseRoute}/api/auth/add-subscription`;
 /********************** Song-routes **************************/
 
 export const getSongsRoute = `${baseRoute}/api/songs/get-songs`;
-export const getSongCoverRoute = `${baseRoute}/api/songdata/cover`;
-export const getSongRoute = `${baseRoute}/api/songsdata/song`;
+export const getSongCoverRoute = `${cloudRoute}/coverimages`;//`${baseRoute}/api/songdata/cover`;
+export const getSongRoute = `${cloudRoute}/songs`;//`${baseRoute}/api/songsdata/song`;
 export const createPlaylistRoute = `${baseRoute}/api/songs/create-playlist`;
 export const addToPlaylistRoute = `${baseRoute}/api/songs/add-to-playlist`;
 export const getPlaylistNamesRoute = `${baseRoute}/api/songs/get-playlist-names`;
@@ -33,3 +34,5 @@ export const deletePlaylistRoute = `${baseRoute}/api/songs/delete-playlist`;
 export const adminAddSongRoute = `${baseRoute}/api/songs/admin-add-songs`;
 export const adminDeleteSongRoute = `${baseRoute}/api/songs/admin-delete-song`;
 export const adminUpdateSongRoute = `${baseRoute}/api/songs/admin-update-song`;
+export const getImageUploadUrl = `${baseRoute}/api/songs/get-image-upload-url`;
+export const getSongUploadUrl = `${baseRoute}/api/songs/get-song-upload-url`;

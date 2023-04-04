@@ -8,7 +8,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import { toast } from "react-toastify";
 import useHTTP from "../../hooks/use-http";
 
-import { adminAddSongRoute } from "../../utils/APIRoutes";
+import { adminAddSongRoute, getImageUploadUrl, getSongUploadUrl } from "../../utils/APIRoutes";
 import useInput from "../../hooks/use-input";
 import { useSelector } from "react-redux";
 import { Stack, Typography } from "@mui/material";
@@ -88,13 +88,67 @@ const AdminAddSongDailog = ({ open, handleClose }) => {
     formdata.append("lyrics", lyricsValue);
     formdata.append("cover", coverImage);
     formdata.append("song", songFile);
+    let imageName;
+    let songName;
     try {
+      const imageDataResponse = await sendRequest(
+        getImageUploadUrl,
+        "POST",
+        JSON.stringify({
+          extension: coverImage.name.split('.').pop(),
+        }),
+        {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        }
+      );
+      if (!!imageDataResponse) {
+        await sendRequest(
+          imageDataResponse.url,
+          "PUT",
+          coverImage,
+          {
+            "Content-Type": "multipart/form-data",
+          }
+        );
+        imageName = imageDataResponse.fileName;
+      }
+      const songDataResponse = await sendRequest(
+        getSongUploadUrl,
+        "POST",
+        JSON.stringify({
+          extension: songFile.name.split('.').pop(),
+        }),
+        {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        }
+      );
+      if (!!songDataResponse) {
+        await sendRequest(
+          songDataResponse.url,
+          "PUT",
+          songFile,
+          {
+            "Content-Type": "multipart/form-data",
+          }
+        );
+        songName = songDataResponse.fileName;
+      }
       const dataResponse = await sendRequest(
         adminAddSongRoute,
         "POST",
-        formdata,
+        JSON.stringify({
+          "name": nameValue,
+          "movie": movieValue,
+          "artist": artistValue,
+          "lyrics": lyricsValue,
+          "cover": imageName,
+          "song": songName,
+        }),
         {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         }
       );
       if (!!dataResponse) {
@@ -196,6 +250,7 @@ const AdminAddSongDailog = ({ open, handleClose }) => {
                 style={{ display: "none" }}
                 onChange={(e) => {
                   setSongFile(e.target.files[0]);
+                  console.log(e.target.files[0].name.split('.').pop());
                   if (!!e.target.files[0]) setSongFileIsValid(true);
                 }}
               />

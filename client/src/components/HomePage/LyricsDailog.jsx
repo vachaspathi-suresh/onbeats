@@ -29,7 +29,7 @@ const LyricsDailog = ({ open, handleClose, lyrics }) => {
       aria-describedby="scroll-dialog-description"
     >
       <DialogTitle id="scroll-dialog-title">Lyrics</DialogTitle>
-      <DialogContent dividers={true}>
+      <DialogContent  dividers={true}>
         <DialogContentText
           id="scroll-dialog-description"
           ref={descriptionElementRef}

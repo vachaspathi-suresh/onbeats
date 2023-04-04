@@ -18,8 +18,12 @@ const useHTTP = () => {
           headers,
           signal: httpAbortCtrl.signal,
         });
-
-        const responseData = await response.json();
+        let responseData;
+        try{
+          responseData = await response.json();
+        }catch(err){
+          responseData = response;
+        }
 
         activeHttpRequests.current = activeHttpRequests.current.filter(
           (reqCtrl) => reqCtrl !== httpAbortCtrl

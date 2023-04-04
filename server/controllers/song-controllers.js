@@ -1,8 +1,8 @@
 const { validationResult } = require("express-validator");
-const fs = require("fs");
 const HttpError = require("../models/http-error");
 const Song = require("../models/song-model");
 const User = require("../models/user-model");
+const awsS3 = require("../models/aws-s3-bucket-model");
 
 const getSongs = async (req, res, next) => {
   try {
@@ -277,6 +277,7 @@ const adminAddSong = async (req, res, next) => {
   try {
     user = await User.findById(req.userData.userID);
   } catch (err) {
+    console.log(err);
     return next(
       new HttpError("Unable to Add Song, please try again later.", 500)
     );
@@ -293,8 +294,8 @@ const adminAddSong = async (req, res, next) => {
       : "Lyrics Not Available";
   const newSong = new Song({
     songname: req.body.name,
-    songlocation: req.files.song[0].path.split("\\")[2],
-    coverlocation: req.files.cover[0].path.split("\\")[2],
+    songlocation: req.body.song,
+    coverlocation: req.body.cover,
     lyrics: lyrics,
     artist: req.body.artist,
     moviename: req.body.movie,
@@ -303,6 +304,7 @@ const adminAddSong = async (req, res, next) => {
   try {
     await newSong.save();
   } catch (err) {
+    console.log(err);
     return next(
       new HttpError("Adding Song failed, please try again later.", 500)
     );
@@ -339,10 +341,14 @@ const adminDeleteSong = async (req, res, next) => {
 
   try {
     await Song.findByIdAndDelete(req.body.songId, () => {}).clone();
-    fs.unlinkSync("res/covers/" + song.coverlocation);
-    fs.unlinkSync("res/songs/" + song.songlocation);
-
-    res.status(200).json({ status: "success" });
+    if (
+      awsS3.deleteFile("coverimages", song.coverlocation) &&
+      awsS3.deleteFile("songs", song.songlocation)
+    ) {
+      res.status(200).json({ status: "success" });
+    } else {
+      res.status(404).json({ status: "fail" });
+    }
   } catch (err) {
     return next(
       new HttpError("Unable to Delete Song, please try again later.", 500)
@@ -395,6 +401,69 @@ const adminUpdateSong = async (req, res, next) => {
   }
 };
 
+const getImageUploadUrl = async (req, res, next) => {
+  let user;
+  try {
+    user = await User.findById(req.userData.userID);
+  } catch (err) {
+    console.log(err);
+    return next(
+      new HttpError("Unable to Add Song, please try again later.", 500)
+    );
+  }
+  if (!user) {
+    return next(new HttpError("User not found", 404));
+  }
+  if (user.userprivilege !== "adm") {
+    return next(new HttpError("Invalid Authorization", 404));
+  }
+  let uploadURLData = { url: undefined, fileName: undefined };
+  try {
+    uploadURLData = await awsS3.generateUploadURL(
+      "coverimages",
+      req.body.extension
+    );
+  } catch (err) {
+    console.log(err);
+    return next(
+      new HttpError("Adding Song failed, please try again later.", 500)
+    );
+  }
+  res
+    .status(200)
+    .json({ url: uploadURLData.url, fileName: uploadURLData.fileName });
+};
+
+const getSongUploadUrl = async (req, res, next) => {
+  let user;
+  try {
+    user = await User.findById(req.userData.userID);
+  } catch (err) {
+    console.log(err);
+    return next(
+      new HttpError("Unable to Add Song, please try again later.", 500)
+    );
+  }
+  if (!user) {
+    return next(new HttpError("User not found", 404));
+  }
+  if (user.userprivilege !== "adm") {
+    return next(new HttpError("Invalid Authorization", 404));
+  }
+  let uploadURLData = { url: undefined, fileName: undefined };
+  try {
+    uploadURLData = await awsS3.generateUploadURL("songs", req.body.extension);
+  } catch (err) {
+    console.log(err);
+    return next(
+      new HttpError("Adding Song failed, please try again later.", 500)
+    );
+  }
+  res
+    .status(200)
+    .json({ url: uploadURLData.url, fileName: uploadURLData.fileName });
+};
+
 exports.getSongs = getSongs;
 exports.createPlayList = createPlayList;
 exports.addToPlayList = addToPlayList;
@@ -406,3 +475,5 @@ exports.deletePlayList = deletePlayList;
 exports.adminAddSong = adminAddSong;
 exports.adminDeleteSong = adminDeleteSong;
 exports.adminUpdateSong = adminUpdateSong;
+exports.getImageUploadUrl = getImageUploadUrl;
+exports.getSongUploadUrl = getSongUploadUrl;
